@@ -1,19 +1,3 @@
-// Copyright 2018 The Alephium Authors
-// This file is part of the alephium project.
-//
-// The library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the library. If not, see <http://www.gnu.org/licenses/>.
-
 package org.alephium.explorer.benchmark.db
 
 import scala.concurrent.Await
@@ -22,14 +6,14 @@ import scala.concurrent.duration._
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 import slick.basic.DatabaseConfig
-import slick.jdbc.PostgresProfile
+import slick.jdbc.MySQLProfile
 import slick.lifted.AbstractTable
 
 import org.alephium.explorer.persistence.DBAction
 
 object DBExecutor extends StrictLogging {
 
-  /** Builds a [[DBExecutor]] instance for Postgres.
+  /** Builds a [[DBExecutor]] instance for MySQL.
     *
     * @param name
     *   Target database name
@@ -41,19 +25,19 @@ object DBExecutor extends StrictLogging {
   def apply(name: String, host: String, port: Int, connectionPool: DBConnectionPool): DBExecutor = {
     logger.info(s"Connecting to database: '$name'")
     val config =
-      DatabaseConfig.forConfig[PostgresProfile](
+      DatabaseConfig.forConfig[MySQLProfile](
         path = "db",
         config = ConfigFactory.parseString(
           s"""db = {
-             |  profile = "slick.jdbc.PostgresProfile$$"
+             |  profile = "slick.jdbc.MySQLProfile$$"
              |  db {
              |    connectionPool = $connectionPool
              |    name           = $name
              |    host           = $host
              |    port           = $port
-             |    user           = "postgres"
-             |    password       = "postgres"
-             |    url            = "jdbc:postgresql://$host:$port/$name"
+             |    user           = "root"
+             |    password       = "password"
+             |    url            = "jdbc:mysql://$host:$port/$name?useSSL=false&serverTimezone=UTC"
              |  }
              |}
              |""".stripMargin
@@ -66,9 +50,9 @@ object DBExecutor extends StrictLogging {
   // scalastyle:off magic.number
   def forTest(): DBExecutor =
     DBExecutor(
-      name = "postgres",
+      name = "mysql",
       host = "localhost",
-      port = 5432,
+      port = 3306,
       connectionPool = DBConnectionPool.Disabled
     )
   // scalastyle:on magic.number
@@ -83,7 +67,7 @@ object DBExecutor extends StrictLogging {
   *   Similar to [[org.alephium.explorer.persistence.DBRunner]] but provides blocking execution. To
   *   avoid naming conflicts it's named [[DBExecutor]] instead of `DBRunner`.
   */
-class DBExecutor private (val config: DatabaseConfig[PostgresProfile]) extends StrictLogging {
+class DBExecutor private (val config: DatabaseConfig[MySQLProfile]) extends StrictLogging {
 
   import config.profile.api._
 

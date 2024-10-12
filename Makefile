@@ -33,18 +33,22 @@ benchmark-run:
 	
 create-db:
 	# Env variables as defined in `application.conf`
-	psql \
+	mysql \
 		-h $(or $(DB_HOST), localhost) \
-		-p $(or $(DB_PORT), 5432) \
-		-U $(or $(DB_USER), postgres) \
-		-c "CREATE DATABASE $(or $(DB_NAME), explorer)"
+		-P $(or $(DB_PORT), 3306) \
+		-u $(or $(DB_USER), root) \
+		-p$(or $(DB_PASSWORD), password) \
+		-e "CREATE DATABASE IF NOT EXISTS $(or $(DB_NAME), explorer);"
+
 
 restore-db:
 	#Make sure to define ALEPHIUM_NETWORK to "mainnet" or "testnet"
 	curl $(shell curl -L -s "https://s3.eu-central-1.amazonaws.com/archives.alephium.org/archives/${ALEPHIUM_NETWORK}/explorer-db/_latest.txt") -L ${url} | \
 	gunzip -c | \
-	psql \
+	mysql \
 		-h $(or $(DB_HOST), localhost) \
-		-p $(or $(DB_PORT), 5432) \
-		-U $(or $(DB_USER), postgres) \
-		-d $(or $(DB_NAME), explorer)	
+		-P $(or $(DB_PORT), 3306) \
+		-u $(or $(DB_USER), root) \
+		-p$(or $(DB_PASSWORD), password) \
+		-D $(or $(DB_NAME), explorer)
+
