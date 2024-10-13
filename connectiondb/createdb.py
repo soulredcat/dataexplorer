@@ -28,7 +28,7 @@ def create_table():
         CREATE TABLE IF NOT EXISTS tokenlist (
             id VARCHAR(255) NOT NULL PRIMARY KEY, 
             ca VARCHAR(255),                     
-            supply DECIMAL(30, 18),              
+            supply VARCHAR(255),              
             name VARCHAR(255) NOT NULL,
             symbol VARCHAR(50) NOT NULL,
             decimals INT NOT NULL,
