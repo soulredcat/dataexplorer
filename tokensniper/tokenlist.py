@@ -3,8 +3,12 @@ import os
 import requests
 import logging
 
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from conectiondb.dbconection import create_connection 
+
+from connectiondb.dblogin import create_connection
+from connectiondb.createdb import create_table
+
 logging.basicConfig(level=logging.INFO)
 
 def save_tokens_to_db(tokens):
@@ -14,7 +18,7 @@ def save_tokens_to_db(tokens):
         try:
             cursor = connection.cursor()
             insert_query = """
-            INSERT INTO tokens (id, name, symbol, decimals, logoURI)
+            INSERT INTO tokenlist (id, name, symbol, decimals, logoURI)  -- Ensure this matches the table name
             VALUES (%s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE name = VALUES(name), symbol = VALUES(symbol), 
                                     decimals = VALUES(decimals), logoURI = VALUES(logoURI);
@@ -24,7 +28,6 @@ def save_tokens_to_db(tokens):
                            token.get("decimals"), token.get("logoURI")) for token in tokens]
             
             cursor.executemany(insert_query, token_data)
-            
             connection.commit()
             logging.info(f"Inserted {cursor.rowcount} tokens into the database.")
         except Exception as e:
@@ -34,7 +37,6 @@ def save_tokens_to_db(tokens):
             connection.close()
     else:
         logging.error("Connection to database failed.")
-
 
 def fetch_data_from_api(url):
     """Fetch JSON data from the provided API URL."""
@@ -47,9 +49,10 @@ def fetch_data_from_api(url):
         return None
 
 if __name__ == "__main__":
+    create_table()  
+
     api_url = "https://raw.githubusercontent.com/alephium/token-list/master/tokens/mainnet.json"
     
-
     json_data = fetch_data_from_api(api_url)
     if json_data and 'tokens' in json_data:
         save_tokens_to_db(json_data['tokens'])
