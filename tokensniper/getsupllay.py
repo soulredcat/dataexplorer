@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from connectiondb.dblogin import create_connection
 
-api_url_template = "https://api.zobula.xyz/api/1/market/pairs?asset={ca}&blockchain=Alephium"
+api_url_template = "https://api.zobula.xyz/api/1/market/pairs?asset={ca}&blockchain=Alephium&account=null&signature=null"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -47,8 +47,7 @@ def fetch_token_data_and_update_supply(connection, ca, token_id):
 
             
             first_pair = data['data']['pairs'][0]  
-            token1 = first_pair['token1']
-            supply = token1['address']
+            supply = first_pair['address']
 
             update_supply_in_db(connection, token_id, supply)
 
