@@ -23,12 +23,14 @@ const connectToDatabase = (): void => {
 const createTables = (): void => {
     const createTokenBalancesTable = `
         CREATE TABLE IF NOT EXISTS tokenprice (
+            id INT AUTO_INCREMENT PRIMARY KEY,
             flip VARCHAR(10) DEFAULT '1',
             symbol VARCHAR(255),
             address VARCHAR(255),
             price0 DECIMAL(64, 18) DEFAULT 0,
             price1 DECIMAL(64, 18) DEFAULT 0,
-            color VARCHAR(10) NOT NULL DEFAULT 'red',
+            color VARCHAR(10) NOT NULL DEFAULT 'green',
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             PRIMARY KEY (address, symbol)
         )
     `;
