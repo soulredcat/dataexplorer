@@ -12,5 +12,3 @@ Although this project started out as a hobby, it has potential to grow into some
 
 Disclaimer
 This project is for fun, and while the prices displayed are accurate, it is not intended to be a professional trading tool.
-
-You can adjust any details as needed!
