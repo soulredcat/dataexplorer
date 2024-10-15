@@ -1,4 +1,4 @@
-import { connectToDatabase, closeConnection } from './ohcllogin';
+import { connectToDatabase, closeConnection } from './dblogin/ohcllogin';
 import { db } from './dblogin/dbloginlist';
 
 const fetchOHLCData = async (): Promise<void> => {

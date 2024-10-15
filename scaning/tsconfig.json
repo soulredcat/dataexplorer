@@ -11,6 +11,6 @@
         "outDir": "./dist",
         "rootDir": "./src"
     },
-    "include": ["src/**/*", "*.ts"],
+    "include": ["src/**/*", "*.ts", "dblogin/ohcllogin.ts"],
     "exclude": ["node_modules", "**/*.spec.ts"]
 }
