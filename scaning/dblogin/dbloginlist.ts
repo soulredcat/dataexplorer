@@ -7,7 +7,6 @@ const db: Connection = createConnection({
     database: 'coinlist' 
 });
 
-
 const connectToDatabase = (): void => {
     db.connect((err) => {
         if (err) {
@@ -19,9 +18,8 @@ const connectToDatabase = (): void => {
     });
 };
 
-
 const createTables = (): void => {
-    const createTokenBalancesTable = `
+    const createTokenPriceTable = `
         CREATE TABLE IF NOT EXISTS tokenprice (
             id INT AUTO_INCREMENT PRIMARY KEY,
             flip VARCHAR(10) DEFAULT '1',
@@ -30,20 +28,19 @@ const createTables = (): void => {
             price0 DECIMAL(64, 18) DEFAULT 0,
             price1 DECIMAL(64, 18) DEFAULT 0,
             color VARCHAR(10) NOT NULL DEFAULT 'green',
-            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            PRIMARY KEY (address, symbol)
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_symbol_address (symbol, address)
         )
     `;
 
-    db.query(createTokenBalancesTable, (error, results) => {
+    db.query(createTokenPriceTable, (error, results) => {
         if (error) {
-            console.error('Error creating token balances table: ', error);
+            console.error('Error creating token price table: ', error);
             return; 
         }
-        console.log('Token balances table checked/created successfully.');
+        console.log('Token price table checked/created successfully.');
     });
 };
-
 
 const closeConnection = (): void => {
     db.end((err) => {
@@ -54,7 +51,6 @@ const closeConnection = (): void => {
         }
     });
 };
-
 
 export {
     db,
