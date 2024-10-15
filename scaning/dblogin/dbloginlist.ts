@@ -28,6 +28,7 @@ const createTables = (): void => {
             address VARCHAR(255),
             price0 DECIMAL(64, 18) DEFAULT 0,
             price1 DECIMAL(64, 18) DEFAULT 0,
+            color VARCHAR(10) NOT NULL DEFAULT 'red',
             PRIMARY KEY (address, symbol)
         )
     `;
