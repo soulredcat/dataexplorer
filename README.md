@@ -1,4 +1,5 @@
 Alephium Price Display Project
+
 This project is a fun exploration of real-time price display functionality using data from the Alephium network. Although initially developed for enjoyment, some elements have been implemented into real-world projects.
 
 Features
