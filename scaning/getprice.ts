@@ -1,4 +1,4 @@
-import getLocalAdd from './src/api/lockaladd';
+import getLocalAdd from './src/api/localadd';
 import getMainnet from './src/api/mainnet';
 
 interface Token {
