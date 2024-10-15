@@ -32,28 +32,37 @@ const fetchAndStoreTokenPrices = async (): Promise<void> => {
                 continue; 
             }
 
+            try {
+                const priceData = await getTokenPrice({ supply, id, symbol, decimals });
 
-            const priceData = await getTokenPrice({ supply, id, symbol, decimals });
+                console.log(`Token: ${name} (${symbol})`);
+                console.log(`Price0: ${priceData.price0}, Price1: ${priceData.price1}`);
 
+                const insertQuery = `
+                    INSERT INTO tokenprice (symbol, address, price0, price1) 
+                    VALUES (?, ?, ?, ?) 
+                    ON DUPLICATE KEY UPDATE price0 = ?, price1 = ?
+                `;
+                const values = [symbol, id, priceData.price0, priceData.price1, priceData.price0, priceData.price1];
 
-            console.log(`Token: ${name} (${symbol})`);
-            console.log(`Price0: ${priceData.price0}, Price1: ${priceData.price1}`);
+                await new Promise<void>((resolve, reject) => {
+                    db.query(insertQuery, values, (err) => {
+                        if (err) {
+                            console.error('Error inserting/updating token price data: ', err);
+                            reject(err);
+                        } else {
+                            console.log(`Price data for ${name} (${symbol}) updated successfully.`);
+                            resolve();
+                        }
+                    });
+                });
 
+                
+                await saveLatestPriceToCoinlist({ coins: symbol, supply: id }, priceData.price0);
 
-            const insertQuery = `
-                INSERT INTO tokenprice (symbol, address, price0, price1) 
-                VALUES (?, ?, ?, ?) 
-                ON DUPLICATE KEY UPDATE price0 = ?, price1 = ?
-            `;
-            const values = [symbol, id, priceData.price0, priceData.price1, priceData.price0, priceData.price1];
-
-            db.query(insertQuery, values, (err) => {
-                if (err) {
-                    console.error('Error inserting/updating token price data: ', err);
-                } else {
-                    console.log(`Price data for ${name} (${symbol}) updated successfully.`);
-                }
-            });
+            } catch (err) {
+                console.error(`Error processing token ${name} (${symbol}):`, err);
+            }
         }
 
 
@@ -63,5 +72,38 @@ const fetchAndStoreTokenPrices = async (): Promise<void> => {
     });
 };
 
+async function saveLatestPriceToCoinlist(token, price) {
+    await createTokensTableIfNotExists();
+
+    const currentPriceQuery = `
+        SELECT price, color FROM tokens WHERE symbol = ? AND source = 0;
+    `;
+    
+    try {
+        const [currentPriceResult] = await db.query(currentPriceQuery, [token.coins]);
+        const previousPrice = currentPriceResult.length > 0 ? currentPriceResult[0].price : null;
+        const previousColor = currentPriceResult.length > 0 ? currentPriceResult[0].color : null;
+
+        let newColor: string | null = null;
+
+        if (previousPrice !== null) {
+           
+            newColor = price > previousPrice ? 'green' : (price < previousPrice ? 'red' : previousColor);
+        }
+
+        const updatePriceQuery = `
+            INSERT INTO tokens (symbol, price, address, color, source) 
+            VALUES (?, ?, ?, COALESCE(?, color), 0) 
+            ON DUPLICATE KEY UPDATE 
+                price = ?, 
+                color = COALESCE(?, color);
+        `;
+
+        await db.query(updatePriceQuery, [token.coins, price, token.supply, newColor, price, newColor]);
+        console.log(`Updated price for ${token.coins} in coinlist database with color ${newColor}.`);
+    } catch (err) {
+        console.error(`Error updating price for ${token.coins} in coinlist:`, err);
+    }
+}
 
 fetchAndStoreTokenPrices();
