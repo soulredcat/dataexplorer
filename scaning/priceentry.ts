@@ -11,7 +11,6 @@ interface TokenListEntry {
     logoURI: string;
 }
 
-
 const fetchAndStoreTokenPrices = async (): Promise<void> => {
     connectToDatabase(); 
 
@@ -26,7 +25,6 @@ const fetchAndStoreTokenPrices = async (): Promise<void> => {
         for (const token of results) {
             const { id, ca, supply, name, symbol, decimals, logoURI } = token;
 
-
             if (!supply) {
                 console.log(`Skipping token: ${name} (${symbol}) due to empty supply.`);
                 continue; 
@@ -38,12 +36,15 @@ const fetchAndStoreTokenPrices = async (): Promise<void> => {
                 console.log(`Token: ${name} (${symbol})`);
                 console.log(`Price0: ${priceData.price0}, Price1: ${priceData.price1}`);
 
+                let price0: number = priceData.price0 ?? 0; 
+                let price1: number = priceData.price1 ?? 0; 
+
                 const insertQuery = `
                     INSERT INTO tokenprice (symbol, address, price0, price1) 
                     VALUES (?, ?, ?, ?) 
                     ON DUPLICATE KEY UPDATE price0 = ?, price1 = ?
                 `;
-                const values = [symbol, id, priceData.price0, priceData.price1, priceData.price0, priceData.price1];
+                const values = [symbol, id, price0, price1, price0, price1];
 
                 await new Promise<void>((resolve, reject) => {
                     db.query(insertQuery, values, (err) => {
@@ -57,53 +58,48 @@ const fetchAndStoreTokenPrices = async (): Promise<void> => {
                     });
                 });
 
-                
-                await saveLatestPriceToCoinlist({ coins: symbol, supply: id }, priceData.price0);
+                const currentPriceQuery = `
+                    SELECT price0, color FROM tokenprice WHERE symbol = ? AND address = ?;
+                `;
+
+                const currentPriceResult: Array<{ price0: number | null; color: string | null }> = await new Promise((resolve, reject) => {
+                    db.query(currentPriceQuery, [symbol, id], (err, result) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(result);
+                        }
+                    });
+                });
+
+                const previousPrice0 = currentPriceResult.length > 0 ? currentPriceResult[0].price0 : null;
+                const previousColor = currentPriceResult.length > 0 ? currentPriceResult[0].color : null;
+
+                let newColor: string | null = previousColor; 
+
+                if (previousPrice0 !== null) {
+                    newColor = price0 > previousPrice0 ? 'green' : (price0 < previousPrice0 ? 'red' : previousColor);
+                }
+
+                const updatePriceQuery = `
+                    INSERT INTO tokenprice (symbol, address, price0, price1, color) 
+                    VALUES (?, ?, ?, ?, COALESCE(?, color)) 
+                    ON DUPLICATE KEY UPDATE 
+                        price0 = ?, 
+                        price1 = ?, 
+                        color = COALESCE(?, color);
+                `;
+
+                await db.query(updatePriceQuery, [symbol, id, price0, price1, newColor, price0, price1, newColor]);
+                console.log(`Updated price for ${symbol} in tokenprice database with color ${newColor}.`);
 
             } catch (err) {
                 console.error(`Error processing token ${name} (${symbol}):`, err);
             }
         }
 
-
-        setTimeout(() => {
-            fetchAndStoreTokenPrices(); 
-        }, 10000);
+        setTimeout(fetchAndStoreTokenPrices, 10000); 
     });
 };
-
-async function saveLatestPriceToCoinlist(token, price) {
-    await createTokensTableIfNotExists();
-
-    const currentPriceQuery = `
-        SELECT price, color FROM tokens WHERE symbol = ? AND source = 0;
-    `;
-    
-    try {
-        const [currentPriceResult] = await db.query(currentPriceQuery, [token.coins]);
-        const previousPrice = currentPriceResult.length > 0 ? currentPriceResult[0].price : null;
-        const previousColor = currentPriceResult.length > 0 ? currentPriceResult[0].color : null;
-
-        let newColor: string | null = null;
-
-        if (previousPrice !== null) {
-           
-            newColor = price > previousPrice ? 'green' : (price < previousPrice ? 'red' : previousColor);
-        }
-
-        const updatePriceQuery = `
-            INSERT INTO tokens (symbol, price, address, color, source) 
-            VALUES (?, ?, ?, COALESCE(?, color), 0) 
-            ON DUPLICATE KEY UPDATE 
-                price = ?, 
-                color = COALESCE(?, color);
-        `;
-
-        await db.query(updatePriceQuery, [token.coins, price, token.supply, newColor, price, newColor]);
-        console.log(`Updated price for ${token.coins} in coinlist database with color ${newColor}.`);
-    } catch (err) {
-        console.error(`Error updating price for ${token.coins} in coinlist:`, err);
-    }
-}
 
 fetchAndStoreTokenPrices();

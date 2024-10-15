@@ -1,5 +1,5 @@
-import getLocalAdd from './api/lockaladd';
-import getMainnet from './api/mainnet';
+import getLocalAdd from './src/api/lockaladd';
+import getMainnet from './src/api/mainnet';
 
 interface Token {
     supply: string;
